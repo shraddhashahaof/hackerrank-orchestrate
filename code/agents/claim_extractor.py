@@ -1,54 +1,46 @@
-# from utils.gemini_client import GeminiClient
-from utils.json_parser import parse_json_response
+import json
 from utils.llm_factory import LLMFactory
+
 
 class ClaimExtractor:
 
     def __init__(self):
-
-        # self.client = GeminiClient()
         self.client = LLMFactory.get_client()
 
-    def extract(
-        self,
-        claim_text: str,
-        claim_object: str
-    ):
-
+    def extract(self, user_claim: str, claim_object: str) -> dict:
         prompt = f"""
-You are an insurance claim analyst.
+You are an insurance claim extraction agent.
 
-Claim Object:
-{claim_object}
+Extract structured information from this claim:
 
-Claim Description:
-{claim_text}
+Claim: "{user_claim}"
+Object: "{claim_object}"
 
-Extract:
+IMPORTANT RULES:
+- affected_part must be a comma-separated list of individual parts
+- Do NOT use "and" to join parts — use commas only
+- Example: "front bumper, left headlight" not "front bumper and left headlight"
+- Use simple generic part names: "door", "windshield", "bumper", "headlight"
+- Do NOT include qualifiers like "front glass (windshield)" — just say "windshield"
 
-1. issue
-2. affected_part
-3. summary
-4. severity
-
-Severity must be one of:
-
-low
-medium
-high
-
-Return ONLY JSON.
-
-Example:
-
+Respond ONLY with valid JSON:
 {{
-    "issue":"crack",
-    "affected_part":"windshield",
-    "summary":"Front windshield cracked by road debris",
-    "severity":"medium"
+  "issue": "damage type",
+  "affected_part": "part1, part2",
+  "summary": "brief summary",
+  "severity": "low|medium|high"
 }}
+
+No explanation. JSON only.
 """
-
-        response = self.client.generate(prompt)
-
-        return parse_json_response(response)
+        try:
+            response = self.client.generate(prompt)
+            clean = response.strip().replace("```json", "").replace("```", "").strip()
+            return json.loads(clean)
+        except Exception as e:
+            return {
+                "issue": "unknown",
+                "affected_part": "",
+                "summary": str(e),
+                "severity": "low"
+            }
