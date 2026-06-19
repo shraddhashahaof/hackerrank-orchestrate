@@ -1,7 +1,5 @@
 import json
 from utils.llm_factory import LLMFactory
-from utils.logger import logger
-from utils import cache, retry
 
 
 class ClaimExtractor:
@@ -23,7 +21,7 @@ IMPORTANT RULES:
 - Do NOT use "and" to join parts — use commas only
 - Example: "front bumper, left headlight" not "front bumper and left headlight"
 - Use simple generic part names: "door", "windshield", "bumper", "headlight"
-- Do NOT include qualifiers in brackets — just say "windshield" not "front glass (windshield)"
+- Do NOT include qualifiers like "front glass (windshield)" — just say "windshield"
 
 Respond ONLY with valid JSON:
 {{
@@ -35,22 +33,11 @@ Respond ONLY with valid JSON:
 
 No explanation. JSON only.
 """
-        cached = cache.get(prompt)
-        if cached:
-            return cached
-
-        def call():
+        try:
             response = self.client.generate(prompt)
             clean = response.strip().replace("```json", "").replace("```", "").strip()
             return json.loads(clean)
-
-        try:
-            result = retry.with_retry(call)
-            cache.set(prompt, result)
-            logger.info(f"ClaimExtractor: {result}")
-            return result
         except Exception as e:
-            logger.error(f"ClaimExtractor failed: {e}")
             return {
                 "issue": "unknown",
                 "affected_part": "",

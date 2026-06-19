@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+
 
 # Virtual Environment
 venv/
@@ -31,6 +33,8 @@ dist/
 # Outputs
 outputs/
 cache/
+.cache/
+
 
 # Jupyter
 .ipynb_checkpoints/

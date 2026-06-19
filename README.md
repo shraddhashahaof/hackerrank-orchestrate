@@ -1,161 +1,204 @@
-# HackerRank Orchestrate
+# 🛡️ Orchestrate — AI-Powered Insurance Claim Processing Pipeline
 
-Starter repository for the **HackerRank Orchestrate** 24-hour hackathon.
-
-Build a system that verifies visual evidence for damage claims across three object types: **cars**, **laptops**, and **packages**.
-
-Your system will receive claim conversations, one or more submitted images, user claim history, and minimum evidence requirements. It must decide whether the submitted images support the claim, contradict it, or do not provide enough information.
-
-Read [`problem_statement.md`](./problem_statement.md) for the full task spec, input/output schema, and allowed values.
+> HackerRank Hackathon — June 2026
+> Multi-Agent Orchestration System for Automated Insurance Claim Decisions
 
 ---
 
-## Contents
+## 📌 What This Project Does
 
-1. [Repository layout](#repository-layout)
-2. [What you need to build](#what-you-need-to-build)
-3. [Where your code goes](#where-your-code-goes)
-4. [Quickstart](#quickstart)
-5. [Evaluation](#evaluation)
-6. [Chat transcript logging](#chat-transcript-logging)
-7. [Submission](#submission)
-8. [Judge interview](#judge-interview)
+Orchestrate is a **multi-agent AI pipeline** that processes insurance claims end-to-end:
+
+1. Extracts structured data from unstructured claim conversations
+2. Inspects claim images using vision AI
+3. Validates evidence against claimed damage
+4. Assesses user risk from claim history
+5. Makes a final decision: **approve / manual_review / reject**
+
+All decisions are **traceable and explainable** — every output includes a confidence score and reason.
 
 ---
 
-## Repository layout
+## 🏗️ Architecture
 
-```text
-.
-├── AGENTS.md                         # Rules for AI coding tools + transcript logging
-├── problem_statement.md              # Full task description and I/O schema
-├── README.md                         # You are here
-├── code/                             # Build your solution here
-│   ├── main.py                       # Suggested terminal entry point
-│   └── evaluation/
-│       └── main.py                   # Suggested evaluation entry point
-└── dataset/
-    ├── sample_claims.csv             # Inputs + expected outputs for development
-    ├── claims.csv                    # Inputs only; run your system on these rows
-    ├── user_history.csv              # Historical claim counts and risk context
-    ├── evidence_requirements.csv     # Minimum image evidence requirements
-    └── images/
-        ├── sample/                   # Images referenced by sample_claims.csv
-        └── test/                     # Images referenced by claims.csv
+```
+User Claim (text + images)
+        │
+        ▼
+┌─────────────────┐
+│  ClaimExtractor │  ← Extracts: issue, affected_part, severity
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ VisionInspector │  ← Inspects images: visible_parts, damage_found
+└────────┬────────┘
+         │
+         ▼
+┌──────────────────────┐
+│  EvidenceValidator   │  ← Matches vision findings to claimed parts
+└────────┬─────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  RiskAssessor   │  ← Scores user based on claim history
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ DecisionEngine  │  ← Combines all signals → final decision
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Evaluator     │  ← Reports metrics on all processed claims
+└─────────────────┘
 ```
 
 ---
 
-## What you need to build
+## 📁 Project Structure
 
-A system that, for each row in `dataset/claims.csv`, produces one row in `output.csv`.
-
-Input fields:
-
-| Column | Meaning |
-|---|---|
-| `user_id` | User submitting the claim; use this to look up `dataset/user_history.csv` |
-| `image_paths` | One or more submitted image paths, separated by semicolons |
-| `user_claim` | Chat transcript describing the issue |
-| `claim_object` | `car`, `laptop`, or `package` |
-
-Required output fields:
-
-| Column | Meaning |
-|---|---|
-| `evidence_standard_met` | Whether the image set is sufficient to evaluate the claim |
-| `evidence_standard_met_reason` | Short reason for the evidence decision |
-| `risk_flags` | Semicolon-separated risk flags, or `none` |
-| `issue_type` | Visible issue type |
-| `object_part` | Relevant object part |
-| `claim_status` | `supported`, `contradicted`, or `not_enough_information` |
-| `claim_status_justification` | Concise explanation grounded in the image evidence |
-| `supporting_image_ids` | Image IDs supporting the decision, or `none` |
-| `valid_image` | Whether the image set is usable for automated review |
-| `severity` | `none`, `low`, `medium`, `high`, or `unknown` |
-
-Hard requirements:
-
-- Must read the provided CSV files and local images.
-- Must produce `output.csv` with the exact schema in `problem_statement.md`.
-- Must include an evaluation workflow
-- Must avoid hardcoded test labels or file-specific answers.
-
-Beyond that you are free to bring your own approach: VLMs, LLMs, structured prompting, rule layers, batching, caching, evaluation pipelines, model comparison, or anything else.
-
----
-
-## Where your code goes
-
-All of your work belongs in [`code/`](./code/). The repo ships with empty starter files that you can grow into your full solution.
-
-Suggested conventions:
-
-- Put your main runnable solution in `code/main.py`, or document your own entry point clearly.
-- Put evaluation code under `code/evaluation/` or an `evaluation/` folder included in your final `code.zip`.
-- Write final predictions to `output.csv`.
+```
+code/
+├── agents/
+│   ├── claim_extractor.py      # LLM-based claim parsing
+│   ├── vision_inspector.py     # Vision API image analysis
+│   ├── evidence_validator.py   # Fuzzy part matching
+│   ├── risk_assessor.py        # User risk scoring
+│   └── decision_engine.py      # Final decision logic
+│
+├── utils/
+│   ├── groq_client.py          # Groq API wrapper (text + vision)
+│   ├── llm_factory.py          # Provider abstraction
+│   ├── logger.py               # Structured logging
+│   ├── cache.py                # MD5-keyed response cache
+│   └── retry.py                # Exponential retry wrapper
+│
+├── services/
+│   └── pipeline_service.py     # Orchestrates all agents per claim
+│
+├── evaluation/
+│   └── evaluator.py            # Metrics: accuracy, distribution, confidence
+│
+├── tests/
+│   ├── test_groq.py
+│   ├── test_vision.py
+│   ├── test_pipeline.py
+│   ├── test_decision.py
+│   ├── test_evaluation.py
+│   └── test_debug.py
+│
+├── outputs/
+│   └── results.csv             # Pipeline output (auto-generated)
+│
+├── logs/
+│   └── pipeline.log            # Full execution log (auto-generated)
+│
+├── main.py                     # Entry point
+├── data_loader.py              # Loads claims + user history CSVs
+└── config.py                   # API keys, provider config
+```
 
 ---
 
-## Quickstart
+## ⚙️ Setup
 
-Clone this repository:
-
+### 1. Clone & enter project
 ```bash
-git clone git@github.com:interviewstreet/hackerrank-orchestrate-june26.git
-cd hackerrank-orchestrate-june26
+git clone https://github.com/shraddhashahaof/hackerrank-orchestrate.git
+cd hackerrank-orchestrate/code
 ```
 
-You are free to use any language or runtime. Python, JavaScript, and TypeScript are all reasonable choices.
+### 2. Create virtual environment
+```bash
+python -m venv venv
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # Mac/Linux
+```
+
+### 3. Install dependencies
+```bash
+pip install groq pandas python-dotenv
+```
+
+### 4. Create `.env` file
+```
+GROQ_API_KEY=your_groq_api_key_here
+PROVIDER=groq
+```
 
 ---
 
-## Evaluation
+## 🚀 Run
 
-The evaluation report should include:
+### Full pipeline (all claims)
+```bash
+python main.py
+```
 
-- metrics on `dataset/sample_claims.csv`
-- at least two strategies, prompts, or model configurations compared
-- the final strategy used for `output.csv`
-- operational analysis covering model calls, token usage, image usage, approximate cost, runtime, and TPM/RPM considerations
-
----
-
-## Chat transcript logging
-
-This repo ships with an `AGENTS.md` that modern AI coding tools may read. It instructs the tool to append conversation turns to a shared log file:
-
-| Platform | Path |
-|---|---|
-| macOS / Linux | `$HOME/hackerrank_orchestrate/log.txt` |
-| Windows | `%USERPROFILE%\hackerrank_orchestrate\log.txt` |
-
-You will upload this log as your chat transcript at submission time. The chat transcript means your conversation with the AI coding tool you used to build the system. It is not the runtime logs, reasoning trace, or conversation history produced by the claim-verification agent you are building.
-
-If you use multiple AI tools, include the relevant conversation logs from all of them in the same transcript file. Separate each tool's section with a clear divider and label it with the tool name.
-
-Never paste secrets into the chat. If secrets are needed, use environment variables.
+### Individual tests
+```bash
+python tests\test_groq.py        # Test LLM connection
+python tests\test_vision.py      # Test image inspection
+python tests\test_pipeline.py    # Test 3 claims end-to-end
+python tests\test_evaluation.py  # Show metrics report
+python tests\test_debug.py       # Verbose output per claim
+```
 
 ---
 
-## Submission
+## 📊 Sample Output
 
-Submit the following files as instructed by HackerRank:
+```
+2026-06-20 01:49:34 [INFO] orchestrate — ==================================================
+2026-06-20 01:49:34 [INFO] orchestrate —   ORCHESTRATE — Insurance Claim AI Pipeline
+2026-06-20 01:49:34 [INFO] orchestrate — ==================================================
+2026-06-20 01:49:34 [INFO] orchestrate — Loaded 44 claims | 47 user history records
+2026-06-20 01:49:35 [INFO] orchestrate — [1/44] Processing user=user_002 object=car
+2026-06-20 01:49:35 [INFO] orchestrate — ClaimExtractor: {'issue': 'accident', 'affected_part': 'bumper, headlight', 'summary': 'Damage to car after parking near office', 'severity': 'medium'}
+2026-06-20 01:49:36 [INFO] orchestrate —   → decision=approve | confidence=0.68 | reason=Evidence supports claim (50% parts matched) and risk is low
 
-1. **Code zip**: zip your runnable solution, README, prompts/configs, and evaluation folder. Exclude virtualenvs, `node_modules`, build artifacts, and unnecessary generated files.
-2. **Predictions CSV**: your final `output.csv` for all rows in `dataset/claims.csv`.
-3. **Chat transcript**: the `log.txt` from the path in [Chat transcript logging](#chat-transcript-logging).
+.....
+.....
+.....
 
-Before submitting, confirm:
+==================================================
+   ORCHESTRATE PIPELINE — EVALUATION REPORT
+==================================================
+  Total Claims Processed : 44
+  Avg Confidence Score   : 0.849
 
-- `output.csv` has one row per row in `dataset/claims.csv`.
-- `output.csv` has the exact required columns in the exact required order.
-- Your evaluation files are included in `code.zip`.
+  Decision Distribution:
+    ✅ Approved      : 10  (22.7%)
+    🔍 Manual Review : 2  (4.5%)
+    ❌ Rejected      : 32  (72.7%)
+==================================================
+
+```
 
 ---
 
-## Judge interview
+## 🧠 Models Used
 
-After submission, the AI Judge may ask about your approach, implementation decisions, model usage, evaluation strategy, and how you used AI while building the solution.
+| Task | Model | Provider |
+|------|-------|----------|
+| Claim Extraction | llama-3.1-8b-instant | Groq |
+| Risk Assessment | llama-3.1-8b-instant | Groq |
+| Image Inspection | meta-llama/llama-4-scout-17b-16e-instruct | Groq |
 
-Be prepared to explain your solution in detail.
+---
+
+## 🔑 Key Design Decisions
+
+- **LLMFactory** — swap providers (Groq/Gemini) without touching agent code
+- **Fuzzy matching** — "car door" matches "door panel" via synonym dictionary
+- **Cache layer** — identical prompts never hit the API twice
+- **Retry logic** — 3 attempts with 2s delay on API failures
+- **Structured logging** — every decision logged to `logs/pipeline.log`
+
+---
+
+## 👩‍💻 Author
+
+Shraddha Shaha — HackerRank Orchestrate Hackathon, June 2026

@@ -4,3 +4,4 @@ pandas
 pydantic
 pillow
 tqdm
+groq
