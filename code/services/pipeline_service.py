@@ -44,8 +44,19 @@ class PipelineService:
 
         return {
             "user_id": claim_row["user_id"],
+            "image_paths": claim_row["image_paths"],
+            "user_claim": claim_row["user_claim"],
             "claim_object": claim_row["claim_object"],
-            "decision": decision["decision"],
-            "confidence": decision["confidence"],
-            "reason": decision["reason"]
+            "evidence_standard_met": validation["evidence_sufficient"],
+            "evidence_standard_met_reason": validation["validation_reason"],
+            "risk_flags": ", ".join(risk_result["risk_flags"]) if risk_result["risk_flags"] else "none",
+            "issue_type": claim_data.get("issue", ""),
+            "object_part": claim_data.get("affected_part", ""),
+            "claim_status": decision["decision"],
+            "claim_status_justification": decision["reason"],
+            "supporting_image_ids": ", ".join([
+                p.split("/")[-1] for p in claim_row["image_paths"].split(";")
+            ]),
+            "valid_image": any(v.get("damage_found", False) for v in vision_results),
+            "severity": claim_data.get("severity", "")
         }

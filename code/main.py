@@ -30,9 +30,8 @@ for idx, claim in claims.iterrows():
         result = pipeline.process_claim(claim, history)
         results.append(result)
         logger.info(
-            f"  → decision={result['decision']} | "
-            f"confidence={result['confidence']} | "
-            f"reason={result['reason']}"
+            f"  → decision={result['claim_status']} | "
+            f"reason={result['claim_status_justification']}"
         )
     except Exception as e:
         logger.error(f"  ✗ Failed claim {idx}: {e}")

@@ -23,8 +23,8 @@ class Evaluator:
 
     def evaluate(self) -> dict:
         total = len(self.results)
-        decision_counts = self.results["decision"].value_counts().to_dict()
-        avg_confidence = round(self.results["confidence"].mean(), 3)
+        decision_counts = self.results["claim_status"].value_counts().to_dict()
+        avg_confidence = 0
 
         approve_count = decision_counts.get("approve", 0)
         reject_count = decision_counts.get("reject", 0)
@@ -54,7 +54,7 @@ class Evaluator:
                 how="inner"
             )
             if not merged.empty:
-                correct = (merged["decision"] == merged["expected_decision"]).sum()
+                correct = (merged["claim_status"] == merged["expected_decision"]).sum()
                 accuracy = round(correct / len(merged), 3)
                 metrics["accuracy"] = accuracy
                 metrics["correct_predictions"] = int(correct)
