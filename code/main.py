@@ -3,29 +3,48 @@ import pandas as pd
 
 from data_loader import DataLoader
 from services.pipeline_service import PipelineService
+from evaluation.evaluator import Evaluator
+from utils.logger import logger
 
 ROOT = Path(__file__).resolve().parent
+
+logger.info("=" * 50)
+logger.info("  ORCHESTRATE — Insurance Claim AI Pipeline")
+logger.info("=" * 50)
 
 loader = DataLoader()
 claims = loader.load_claims()
 history = loader.load_user_history()
 
-pipeline = PipelineService(loader, ROOT)
+logger.info(f"Loaded {len(claims)} claims | {len(history)} user history records")
 
+pipeline = PipelineService(loader, ROOT)
 results = []
 
 for idx, claim in claims.iterrows():
-    print(f"Processing {idx+1}/{len(claims)} — user: {claim['user_id']}")
+    logger.info(
+        f"[{idx+1}/{len(claims)}] Processing user={claim['user_id']} "
+        f"object={claim['claim_object']}"
+    )
     try:
         result = pipeline.process_claim(claim, history)
         results.append(result)
-        print(f"  → {result['decision']} ({result['confidence']})")
+        logger.info(
+            f"  → decision={result['decision']} | "
+            f"confidence={result['confidence']} | "
+            f"reason={result['reason']}"
+        )
     except Exception as e:
-        print(f"  ✗ Failed: {e}")
+        logger.error(f"  ✗ Failed claim {idx}: {e}")
 
+# Save results
 output_df = pd.DataFrame(results)
 output_dir = ROOT / "outputs"
 output_dir.mkdir(exist_ok=True)
 output_file = output_dir / "results.csv"
 output_df.to_csv(output_file, index=False)
-print(f"\n✅ Saved {len(results)} results to {output_file}")
+logger.info(f"Results saved → {output_file}")
+
+# Evaluation report
+evaluator = Evaluator(str(output_file))
+evaluator.print_report()
