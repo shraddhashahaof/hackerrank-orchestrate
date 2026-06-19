@@ -45,6 +45,11 @@ output_file = output_dir / "results.csv"
 output_df.to_csv(output_file, index=False)
 logger.info(f"Results saved → {output_file}")
 
+# Also write output.csv to repo root (required by AGENTS.md)
+root_output = ROOT.parent / "output.csv"
+output_df.to_csv(root_output, index=False)
+logger.info(f"Also saved → {root_output}")
+
 # Evaluation report
 evaluator = Evaluator(str(output_file))
 evaluator.print_report()
