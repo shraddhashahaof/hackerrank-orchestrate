@@ -128,6 +128,23 @@ GROQ_API_KEY=your_groq_api_key_here
 PROVIDER=groq
 ```
 
+### 5. Add Dataset
+Download the dataset from the official HackerRank repo and place it in the repo root:
+
+👉 [Download Dataset](https://github.com/interviewstreet/hackerrank-orchestrate-june26/tree/main/dataset)
+
+Place it as:
+```
+hackerrank-orchestrate/
+└── dataset/
+    ├── claims.csv
+    ├── user_history.csv
+    ├── evidence_requirements.csv
+    └── images/
+        ├── sample/
+        └── test/
+```
+
 ---
 
 ## 🚀 Run
