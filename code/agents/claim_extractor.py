@@ -1,12 +1,13 @@
-from utils.gemini_client import GeminiClient
+# from utils.gemini_client import GeminiClient
 from utils.json_parser import parse_json_response
-
+from utils.llm_factory import LLMFactory
 
 class ClaimExtractor:
 
     def __init__(self):
 
-        self.client = GeminiClient()
+        # self.client = GeminiClient()
+        self.client = LLMFactory.get_client()
 
     def extract(
         self,

@@ -1,77 +1,41 @@
-from utils.gemini_client import GeminiClient
-from utils.json_parser import parse_json_response
-from utils.image_utils import load_image
+import json
+from utils.llm_factory import LLMFactory
 
 
 class VisionInspector:
 
     def __init__(self):
-        self.client = GeminiClient()
+        self.client = LLMFactory.get_client()
 
-    def inspect(
-        self,
-        image_path,
-        claim_object
-    ):
-
-        image = load_image(image_path)
-
+    def inspect(self, image_path: str, claim_object: str) -> dict:
         prompt = f"""
-You are an insurance image reviewer.
+You are an insurance claim image inspector.
 
-Expected object:
-{claim_object}
+Inspect this image of a {claim_object} and identify all visible damage or issues.
 
-Analyze image carefully.
-
-Return ONLY valid JSON.
-
+Respond ONLY with valid JSON like this:
 {{
-    "object":"car",
-    "visible_damage":"scratch",
-    "affected_part":"front bumper",
-    "image_quality":"good",
-    "damage_visible":true
+  "visible_parts": ["front bumper", "left headlight"],
+  "damage_found": true,
+  "damage_description": "Dent on front bumper, cracked left headlight"
 }}
 
-Rules:
-- object must identify what is visible
-- visible_damage should be concise
-- affected_part should identify damaged area
-- image_quality must be: good, medium, poor
-- damage_visible must be true or false
+No explanation. JSON only.
 """
+        try:
+            response = self.client.generate_vision(prompt, image_path)
+            clean = response.strip().replace("```json", "").replace("```", "").strip()
+            return json.loads(clean)
+        except Exception as e:
+            return {
+                "visible_parts": [],
+                "damage_found": False,
+                "damage_description": f"Inspection failed: {e}"
+            }
 
-        response = self.client.generate_vision(
-            prompt,
-            image
-        )
-
-        return parse_json_response(response)
-
-    def inspect_multiple(
-        self,
-        image_paths,
-        claim_object
-    ):
-
+    def inspect_multiple(self, image_paths: list, claim_object: str) -> list:
         results = []
-
-        for image_path in image_paths:
-
-            try:
-
-                result = self.inspect(
-                    image_path=image_path,
-                    claim_object=claim_object
-                )
-
-                results.append(result)
-
-            except Exception as e:
-
-                print(
-                    f"Failed on {image_path}: {e}"
-                )
-
+        for path in image_paths:
+            result = self.inspect(path, claim_object)
+            results.append(result)
         return results

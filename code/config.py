@@ -1,11 +1,8 @@
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY missing in .env")
-
-MODEL_NAME = "gemini-2.5-flash"
+PROVIDER = os.getenv("PROVIDER", "groq")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+MODEL_NAME = "llama-3.1-8b-instant"
